@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Laporan Pelaksanaan Aktiviti PBU 2026</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-placeholder">PBU</div>
+      <div class="sidebar-title">
+        <span class="sidebar-inst">Politeknik Balik Pulau</span>
+        <span class="sidebar-year">Laporan 2026</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard"><span class="nav-icon">⌂</span> Dashboard Utama</a>
+      <a href="#" class="nav-item" data-page="bulanan"><span class="nav-icon">📅</span> Laporan Bulanan</a>
+      <a href="#" class="nav-item" data-page="suku"><span class="nav-icon">📈</span> Laporan Suku Tahunan</a>
+      <a href="#" class="nav-item" data-page="jabatan"><span class="nav-icon">🏢</span> Analisis Jabatan</a>
+      <a href="#" class="nav-item" data-page="ditunda"><span class="nav-icon">⏸</span> Aktiviti Ditunda</a>
+      <a href="#" class="nav-item" data-page="kualiti"><span class="nav-icon">⚠</span> Log Kualiti Data</a>
+      <a href="#" class="nav-item" data-page="senarai"><span class="nav-icon">📋</span> Senarai Aktiviti</a>
+      <a href="#" class="nav-item" data-page="pengurusan"><span class="nav-icon">⚙</span> Pengurusan Data</a>
+    </nav>
+    <div class="sidebar-footer">v2.0 &copy; PBU 2026</div>
+  </aside>
+
+  <!-- MAIN WRAPPER -->
+  <div class="main-wrapper">
+    <!-- HEADER -->
+    <header class="header">
+      <button class="menu-toggle" id="menuToggle" title="Toggle Menu">&#9776;</button>
+      <div class="header-info">
+        <h1 class="header-title">Dashboard Laporan Pelaksanaan Aktiviti PBU 2026</h1>
+        <span class="header-meta">Tahun Pelaporan: <strong>2026</strong> &nbsp;|&nbsp; Tempoh Data: <strong>Jan – Mac 2026 (Q1)</strong> &nbsp;|&nbsp; Dikemas kini: <strong id="lastUpdated">—</strong></span>
+      </div>
+      <div class="header-badge" id="dataBadge">TIADA DATA</div>
+    </header>
+
+    <!-- PAGE CONTAINER -->
+    <main class="page-container">
+
+      <!-- ===== PAGE: DASHBOARD UTAMA ===== -->
+      <section class="page active" id="page-dashboard">
+        <div class="section-title">Dashboard Utama — Ringkasan Pelaksanaan Aktiviti Q1 2026</div>
+        <div class="import-notice" id="importNotice">
+          <strong>&#8679; Import Data Excel:</strong> Tiada data dimuatkan. Sila import fail Excel aktiviti melalui menu <strong>Pengurusan Data</strong> untuk memaparkan analisis sebenar.
+          <button class="btn btn-primary btn-sm" style="margin-left:12px" onclick="navigateTo('pengurusan')">Pergi ke Pengurusan Data</button>
+        </div>
+        <div class="kpi-grid" id="kpiGrid"></div>
+        <div class="kpi-note" id="kpiNote" style="display:none">
+          <strong>Nota:</strong> Peratus selesai dan ditunda dikira berdasarkan status dalam rekod sumber dan tertakluk kepada pengesahan kualiti data.
+          Kaedah: (Bilangan Selesai ÷ Jumlah Semua Rekod) × 100%.
+        </div>
+        <div class="charts-row">
+          <div class="chart-card wide">
+            <div class="chart-card-title">Perbandingan Aktiviti Mengikut Bulan (Jan–Mac 2026)</div>
+            <canvas id="chartBarMain"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Pecahan Status Aktiviti (Q1 2026)</div>
+            <canvas id="chartDonutMain"></canvas>
+          </div>
+        </div>
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-card-title">Trend Bilangan Aktiviti Bulanan</div>
+            <div class="chart-note">Nota: Perubahan bilangan tidak semestinya menunjukkan peningkatan atau kemerosotan prestasi kerana jumlah perancangan setiap bulan mungkin berbeza.</div>
+            <canvas id="chartLineMain"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Prestasi Mengikut Jabatan/Unit</div>
+            <canvas id="chartBarJabatan"></canvas>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-card-header"><span>10 Aktiviti Terkini dalam Rekod</span></div>
+          <div class="table-scroll">
+            <table class="data-table" id="tableRecent">
+              <thead><tr><th>ID</th><th>Program/Aktiviti</th><th>Jabatan/Unit</th><th>Peserta</th><th>Pegawai Urusetia</th><th>Status</th><th>Tarikh</th></tr></thead>
+              <tbody id="tbodyRecent"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PAGE: LAPORAN BULANAN ===== -->
+      <section class="page" id="page-bulanan">
+        <div class="print-header" id="printHeaderBulanan">
+          <div class="print-header-inst">POLITEKNIK BALIK PULAU</div>
+          <div class="print-header-title">Laporan Pelaksanaan Aktiviti Bulanan 2026</div>
+          <div class="print-header-meta" id="printMetaBulanan"></div>
+        </div>
+        <div class="section-title">Laporan Bulanan 2026</div>
+        <div class="filter-bar">
+          <label>Pilih Bulan:</label>
+          <select id="filterBulan">
+            <option value="all">Semua Bulan (Data Tersedia)</option>
+          </select>
+          <button class="btn btn-outline btn-print" id="btnPrintBulanan">&#128438; Cetak Laporan</button>
+          <button class="btn btn-primary" id="btnExportPDFBulanan">&#8681; PDF Laporan</button>
+        </div>
+        <div class="kpi-grid" id="kpiBulanan"></div>
+        <div class="charts-row">
+          <div class="chart-card wide">
+            <div class="chart-card-title">Perbandingan Selesai vs Ditunda (Bulan Dipilih)</div>
+            <canvas id="chartBulananBar"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Pecahan Status</div>
+            <canvas id="chartBulananDonut"></canvas>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-card-header"><span>Senarai Aktiviti Ditunda (Bulan Dipilih)</span></div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>Bil</th><th>Program/Aktiviti</th><th>Jabatan/Unit</th><th>Tarikh Asal</th><th>PIC</th><th>Status</th><th>Catatan/Justifikasi</th></tr></thead>
+              <tbody id="tbodyBulananDitunda"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="table-card" style="margin-top:16px">
+          <div class="table-card-header"><span>Semua Aktiviti Bulan Dipilih</span></div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>ID</th><th>Program/Aktiviti</th><th>Jabatan/Unit</th><th>Tarikh</th><th>Peserta</th><th>PIC</th><th>Status</th><th>Catatan</th></tr></thead>
+              <tbody id="tbodyBulanan"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="data-unavailable" id="bulananUnavailable" style="display:none">
+          <div class="unavailable-icon">📂</div>
+          <div class="unavailable-title">Data Belum Dibekalkan</div>
+          <div class="unavailable-msg">Data bagi bulan ini belum dibekalkan. Sila hubungi unit/jabatan berkenaan untuk mendapatkan fail Excel aktiviti.</div>
+        </div>
+      </section>
+
+      <!-- ===== PAGE: LAPORAN SUKU TAHUNAN ===== -->
+      <section class="page" id="page-suku">
+        <div class="print-header" id="printHeaderSuku">
+          <div class="print-header-inst">POLITEKNIK BALIK PULAU</div>
+          <div class="print-header-title">Laporan Pelaksanaan Aktiviti Suku Tahunan 2026</div>
+          <div class="print-header-meta" id="printMetaSuku"></div>
+        </div>
+        <div class="section-title">Laporan Suku Tahunan 2026</div>
+        <div class="q1-banner" id="sukuBanner">
+          <strong>Data tersedia: Q1 2026 (Januari – Mac)</strong> &nbsp;|&nbsp;
+          Muat naik fail Excel bulan lain melalui Pengurusan Data untuk memaparkan suku tahunan baharu.
+        </div>
+        <div class="filter-bar">
+          <label>Pilih Suku:</label>
+          <select id="filterSuku">
+            <option value="all">Semua Suku (Data Tersedia)</option>
+            <option value="Q1">Q1 (Jan–Mac) 2026</option>
+          </select>
+          <button class="btn btn-outline btn-print" id="btnPrintSuku">&#128438; Cetak Laporan</button>
+        </div>
+        <div class="kpi-grid" id="kpiSuku"></div>
+        <div class="charts-row">
+          <div class="chart-card wide">
+            <div class="chart-card-title">Perbandingan Aktiviti Q1 2026 (Jan vs Feb vs Mac)</div>
+            <canvas id="chartSukuBar"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Pecahan Status Q1 2026</div>
+            <canvas id="chartSukuDonut"></canvas>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-card-header"><span>Ringkasan Pencapaian Q1 2026 (Mengikut Bulan)</span></div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>Bulan</th><th>Jumlah Rekod</th><th>Selesai</th><th>Ditunda</th><th>Digugurkan</th><th>% Selesai</th><th>% Ditunda</th></tr></thead>
+              <tbody id="tbodySuku"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="table-card" style="margin-top:16px">
+          <div class="table-card-header"><span>Status Suku Tahunan — Data Belum Dibekalkan (Q2–Q4)</span></div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>Suku</th><th>Tempoh</th><th>Status Data</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Q2</strong></td><td>April – Jun 2026</td><td><span class="badge badge-belum">Data Belum Dibekalkan</span></td></tr>
+                <tr><td><strong>Q3</strong></td><td>Julai – September 2026</td><td><span class="badge badge-belum">Data Belum Dibekalkan</span></td></tr>
+                <tr><td><strong>Q4</strong></td><td>Oktober – Disember 2026</td><td><span class="badge badge-belum">Data Belum Dibekalkan</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PAGE: ANALISIS JABATAN ===== -->
+      <section class="page" id="page-jabatan">
+        <div class="section-title">Analisis Jabatan / Unit — Q1 2026</div>
+        <div class="info-box">Nota: Bilangan aktiviti yang lebih tinggi tidak semestinya menunjukkan prestasi lebih baik. Analisis ini berdasarkan rekod yang dibekalkan sahaja.</div>
+        <div class="filter-bar">
+          <label>Jabatan/Unit:</label>
+          <select id="filterJabatanPage"><option value="all">Semua Jabatan/Unit</option></select>
+          <label>Bulan:</label>
+          <select id="filterJabatanBulan">
+            <option value="all">Semua</option>
+            <option value="1">Januari</option><option value="2">Februari</option><option value="3">Mac</option>
+          </select>
+        </div>
+        <div class="kpi-grid" id="kpiJabatan"></div>
+        <div class="charts-row">
+          <div class="chart-card wide">
+            <div class="chart-card-title">Perbandingan Aktiviti Jabatan (Selesai vs Ditunda)</div>
+            <canvas id="chartJabatanBar"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Peratus Selesai Mengikut Jabatan</div>
+            <canvas id="chartJabatanPct"></canvas>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-card-header"><span>Analisis Terperinci Mengikut Jabatan/Unit</span></div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>Bil</th><th>Jabatan/Unit</th><th>Jumlah Rekod</th><th>Selesai</th><th>Ditunda</th><th>Digugurkan</th><th>% Selesai</th><th>Pegawai Urusetia</th></tr></thead>
+              <tbody id="tbodyJabatan"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PAGE: AKTIVITI DITUNDA ===== -->
+      <section class="page" id="page-ditunda">
+        <div class="section-title">Analisis Aktiviti Ditunda — Q1 2026</div>
+        <div class="filter-bar">
+          <label>Jabatan:</label>
+          <select id="filterDitundaJabatan"><option value="all">Semua Jabatan</option></select>
+          <label>Bulan:</label>
+          <select id="filterDitundaBulan">
+            <option value="all">Semua</option>
+            <option value="1">Januari</option><option value="2">Februari</option><option value="3">Mac</option>
+          </select>
+          <button class="btn btn-primary" id="btnExportPDFDitunda">&#8681; PDF Laporan Ditunda</button>
+        </div>
+        <div class="kpi-grid" id="kpiDitunda"></div>
+        <div class="table-card">
+          <div class="table-card-header"><span id="ditundaTableTitle">Senarai Aktiviti Ditunda</span></div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>Bil</th><th>Program/Aktiviti</th><th>Jabatan/Unit</th><th>Tarikh Asal</th><th>PIC</th><th>Catatan/Justifikasi Penundaan</th><th>Tindakan Susulan</th></tr></thead>
+              <tbody id="tbodyDitunda"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PAGE: LOG KUALITI DATA ===== -->
+      <section class="page" id="page-kualiti">
+        <div class="section-title">Log Kualiti Data — Laporan Import</div>
+        <div class="info-box">Halaman ini memaparkan isu kualiti data yang dikenal pasti semasa proses import dan normalisasi. Rekod yang disenaraikan di sini memerlukan pengesahan pegawai bertanggungjawab.</div>
+        <div class="kpi-grid" id="kpiKualiti"></div>
+        <div class="table-card">
+          <div class="table-card-header"><span>Log Kualiti Data — Ringkasan Proses</span></div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>Perkara</th><th>Bilangan</th><th>Butiran</th></tr></thead>
+              <tbody id="tbodyKualitiLog"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="table-card" style="margin-top:16px">
+          <div class="table-card-header"><span>Rekod Memerlukan Pengesahan (Status vs Catatan Tidak Konsisten)</span></div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>ID</th><th>Program/Aktiviti</th><th>Jabatan/Unit</th><th>Status Rekod</th><th>Catatan</th><th>Isu Dikenal Pasti</th></tr></thead>
+              <tbody id="tbodyKualitiIsu"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="table-card" style="margin-top:16px">
+          <div class="table-card-header"><span>Rekod dengan Medan Kosong</span></div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>ID</th><th>Program/Aktiviti</th><th>Jabatan/Unit</th><th>Medan Kosong</th><th>Status</th></tr></thead>
+              <tbody id="tbodyKualitiKosong"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PAGE: SENARAI AKTIVITI ===== -->
+      <section class="page" id="page-senarai">
+        <div class="section-title">Senarai Aktiviti — Q1 2026</div>
+        <div class="filter-bar flex-wrap">
+          <input type="text" id="cariAktiviti" placeholder="Cari nama aktiviti..." />
+          <select id="filterSenaraiJabatan"><option value="all">Semua Jabatan</option></select>
+          <select id="filterSenaraiStatus">
+            <option value="all">Semua Status</option>
+            <option value="Selesai">Selesai</option>
+            <option value="Ditunda">Ditunda</option>
+            <option value="Digugurkan">Digugurkan</option>
+          </select>
+          <select id="filterSenaraiSuku">
+            <option value="all">Semua Suku</option>
+            <option value="Q1">Q1 (Jan–Mac)</option>
+          </select>
+          <select id="filterSenaraiUrutan">
+            <option value="tarikh">Urutan: Tarikh</option>
+            <option value="nama">Urutan: Nama</option>
+            <option value="jabatan">Urutan: Jabatan</option>
+          </select>
+          <button class="btn btn-outline" id="btnExportExcelSenarai">&#8681; Eksport Excel</button>
+          <button class="btn btn-primary" id="btnExportPDF">&#8681; Eksport PDF</button>
+        </div>
+        <div class="table-info" id="tableInfo"></div>
+        <div class="table-card">
+          <div class="table-scroll">
+            <table class="data-table" id="tableAktiviti">
+              <thead>
+                <tr>
+                  <th>ID</th><th>Hari</th><th>Tarikh</th><th>Program/Aktiviti</th>
+                  <th>Peserta</th><th>Jabatan/Unit</th><th>PIC</th>
+                  <th>Status</th><th>Catatan</th><th>Tindakan</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyAktiviti"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="pagination" id="pagination"></div>
+      </section>
+
+      <!-- ===== PAGE: PENGURUSAN DATA ===== -->
+      <section class="page" id="page-pengurusan">
+        <div class="section-title">Pengurusan Data</div>
+        <div class="mgmt-notice">&#8505; Data disimpan dalam <strong>LocalStorage</strong> pelayar ini sahaja. Eksport data secara berkala sebagai sandaran. Data tidak dihantar ke mana-mana pelayan.</div>
+
+        <div class="mgmt-grid">
+          <!-- Import Card -->
+          <div class="mgmt-card wide">
+            <h3>&#8679; Import Fail Excel Aktiviti</h3>
+            <p>Import fail Excel bulanan aktiviti PBU. Sistem menyokong format asal fail yang mengandungi lajur: <strong>Hari, Tarikh, Program/Aktiviti, Peserta, Jabatan/Unit, Pegawai Urusetia (PIC), Catatan/Justifikasi, Status Pelaksanaan</strong>.</p>
+            <p>Boleh import berbilang fail sekaligus (contoh: Januari, Februari dan Mac serentak).</p>
+            <div class="import-zone" id="importZone">
+              <div class="import-zone-icon">📂</div>
+              <div class="import-zone-text">Seret fail Excel ke sini atau klik untuk pilih fail</div>
+              <div class="import-zone-sub">Sokong: .xlsx, .xls &nbsp;|&nbsp; Berbilang fail dibenarkan</div>
+              <input type="file" id="importExcelInput" accept=".xlsx,.xls" multiple style="display:none" />
+              <button class="btn btn-primary" style="margin-top:12px" onclick="document.getElementById('importExcelInput').click()">&#8679; Pilih Fail Excel</button>
+            </div>
+            <div id="importLog" class="import-log" style="display:none"></div>
+          </div>
+
+          <!-- Export & Status -->
+          <div class="mgmt-card">
+            <h3>&#8681; Eksport Data</h3>
+            <p><strong>Eksport Data Excel:</strong></p>
+            <button class="btn btn-outline" id="btnExportAllExcel">&#8681; Semua Aktiviti (Excel)</button>
+            <button class="btn btn-outline" id="btnExportBulananExcel">&#8681; Laporan Bulanan (Excel)</button>
+            <button class="btn btn-outline" id="btnExportSukuExcel">&#8681; Laporan Suku Q1 (Excel)</button>
+            <button class="btn btn-outline" id="btnExportJabatanExcel">&#8681; Analisis Jabatan (Excel)</button>
+            <button class="btn btn-outline" id="btnExportDitundaExcel">&#8681; Senarai Ditunda (Excel)</button>
+            <hr/>
+            <p><strong>Eksport Laporan PDF:</strong></p>
+            <button class="btn btn-primary" id="btnExportPDFPengurusan">&#8681; Laporan Pengurusan Q1 2026 (PDF)</button>
+          </div>
+
+          <!-- Status -->
+          <div class="mgmt-card">
+            <h3>&#128202; Status Data</h3>
+            <div class="status-grid">
+              <div class="status-item"><span class="status-label">Jumlah Rekod</span><span class="status-value" id="statRekod">0</span></div>
+              <div class="status-item"><span class="status-label">Fail Diimport</span><span class="status-value" id="statFail">0</span></div>
+              <div class="status-item"><span class="status-label">Kemas Kini Terakhir</span><span class="status-value" id="statKemas">—</span></div>
+              <div class="status-item"><span class="status-label">Isu Kualiti Data</span><span class="status-value" id="statIsu">—</span></div>
+            </div>
+            <hr/>
+            <button class="btn btn-danger" id="btnClearData">&#128465; Padam Semua Data</button>
+          </div>
+
+          <!-- Manual Add -->
+          <div class="mgmt-card wide">
+            <h3>&#43; Tambah / Edit Rekod Aktiviti</h3>
+            <form id="formAktiviti" autocomplete="off">
+              <input type="hidden" id="editId" />
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>ID Rekod *</label>
+                  <input type="text" id="fIDAktiviti" required placeholder="cth: JAN-001" />
+                </div>
+                <div class="form-group">
+                  <label>Hari</label>
+                  <input type="text" id="fHari" placeholder="cth: Isnin" />
+                </div>
+                <div class="form-group">
+                  <label>Tarikh *</label>
+                  <input type="date" id="fTarikh" required />
+                </div>
+                <div class="form-group">
+                  <label>Program / Aktiviti *</label>
+                  <input type="text" id="fNamaAktiviti" required />
+                </div>
+                <div class="form-group">
+                  <label>Jabatan / Unit *</label>
+                  <input type="text" id="fJabatan" required />
+                </div>
+                <div class="form-group">
+                  <label>Peserta</label>
+                  <input type="text" id="fPeserta" />
+                </div>
+                <div class="form-group">
+                  <label>Pegawai Urusetia (PIC)</label>
+                  <input type="text" id="fPegawai" />
+                </div>
+                <div class="form-group">
+                  <label>Status Pelaksanaan *</label>
+                  <select id="fStatus" required>
+                    <option value="">-- Pilih --</option>
+                    <option value="Selesai">Selesai</option>
+                    <option value="Ditunda">Ditunda</option>
+                    <option value="Digugurkan">Digugurkan</option>
+                  </select>
+                </div>
+                <div class="form-group full-width">
+                  <label>Catatan / Justifikasi</label>
+                  <textarea id="fCatatan" rows="2"></textarea>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="btnSimpan">&#10003; Simpan Rekod</button>
+                <button type="button" class="btn btn-outline" id="btnBatal">Batal</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      Politeknik Balik Pulau &nbsp;|&nbsp; Laporan Pelaksanaan Aktiviti 2026 &nbsp;|&nbsp; Tempoh Data: Januari – Mac 2026 (Q1)
+    </footer>
+  </div>
+
+  <!-- MODAL DETAIL AKTIVITI -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <span id="modalTitle">Butiran Aktiviti</span>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
